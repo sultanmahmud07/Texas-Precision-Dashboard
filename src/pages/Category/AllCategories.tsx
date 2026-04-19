@@ -1,4 +1,4 @@
-import CategoryList from "@/components/modules/Category/CategoryList"
+import CategoryList from "@/components/modules/Availability/CategoryList"
 
 const AllCategories = () => {
   return (

@@ -53,6 +53,7 @@ export function UserActionMenu({ user }: { user: IUser }) {
                                     <DropdownMenuCheckboxItem
                                           key={status}
                                           checked={user?.isActive === status}
+                                          disabled={user?.role === "SUPER_ADMIN"}
                                           onCheckedChange={() => handleStatusUpdate(status)}
                                     >
                                           {status}

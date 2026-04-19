@@ -201,7 +201,7 @@ export default function AllAdminList() {
                       </Link>
                       
                       <DeleteConfirmation onConfirm={() => handleRemoveUser(user._id)}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <Button disabled={user.role === "SUPER_ADMIN"} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </DeleteConfirmation>

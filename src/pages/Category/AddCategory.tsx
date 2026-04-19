@@ -1,8 +1,9 @@
-import CreateCategory from '@/components/modules/Category/CreateCategory'
+
+import ManageAvailability from '@/components/modules/Availability/ManageAvailability'
 
 const AddCategory = () => {
       return (
-            <CreateCategory />
+            <ManageAvailability />
       )
 }
 

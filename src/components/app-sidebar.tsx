@@ -63,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {item.items.map((subItem) => (
-                  <SidebarMenuItem key={subItem.title}>
+                  <SidebarMenuItem className="py-1" key={subItem.title}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={subItem.url}

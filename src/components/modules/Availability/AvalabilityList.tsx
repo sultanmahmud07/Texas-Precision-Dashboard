@@ -51,7 +51,7 @@ export interface ICategory {
   updatedAt: string;
 }
 
-export default function CategoryList() {
+export default function AvailabilitiesList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");

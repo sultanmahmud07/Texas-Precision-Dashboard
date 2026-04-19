@@ -15,8 +15,9 @@ export default function DashboardHeader() {
                   <div className="flex flex-1 items-center gap-3">
                         <SidebarTrigger className="-ml-1 text-muted-foreground" />
 
-                        {/* Search Bar Pill */}
-                        <div className="flex h-11 w-full max-w-md items-center gap-2 rounded-full bg-secondary/10 shadow dark:bg-secondary/60 px-4 text-muted-foreground transition-colors focus-within:text-foreground">
+                       <div className="hidden md:block w-full max-w-md">
+                         {/* Search Bar Pill */}
+                        <div className="flex  h-11 w-full items-center gap-2 rounded-full bg-secondary/10 shadow dark:bg-secondary/60 px-4 text-muted-foreground transition-colors focus-within:text-foreground">
                               <Search className="h-4 w-4 shrink-0" />
                               <input
                                     type="text"
@@ -27,6 +28,7 @@ export default function DashboardHeader() {
                                     ⌘ S
                               </div>
                         </div>
+                       </div>
                   </div>
 
                   {/* Right Side: Actions & Profile */}

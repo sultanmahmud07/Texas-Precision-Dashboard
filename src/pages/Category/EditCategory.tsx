@@ -1,4 +1,4 @@
-import UpdateCategoryComponent from "@/components/modules/Category/UpdateCategory"
+import UpdateCategoryComponent from "@/components/modules/Availability/UpdateCategory"
 
 const EditCategory = () => {
   return (
