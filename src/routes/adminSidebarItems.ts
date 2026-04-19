@@ -9,11 +9,11 @@ import {
   Calendar1,
   MapPinHouse,
 } from "lucide-react";
-import AllContactList from "@/components/modules/Contact/ContactList";
 import Analytics from "@/pages/Analytics/Analytics";
 import MyProfile from "@/pages/Profile/MyProfile";
 import AvailabilitiesList from "@/components/modules/Availability/AvalabilityList";
 import ManageAvailability from "@/components/modules/Availability/ManageAvailability";
+import AllInspectionList from "@/components/modules/Inspection/inspections";
 
 
 export const adminSidebarItems: ISidebarItem[] = [
@@ -41,7 +41,7 @@ export const adminSidebarItems: ISidebarItem[] = [
       {
         title: "Inspections",
         url: "/inspection-requests",
-        component: AllContactList,
+        component: AllInspectionList,
         icon: HousePlus,
       },
     ],

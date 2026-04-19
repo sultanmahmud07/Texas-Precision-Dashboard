@@ -22,6 +22,7 @@ import ProductDetails from "@/pages/Product/ProductDetails";
 import AddAdmin from "@/components/modules/Admin/AddAdmin";
 import ContactDetails from "@/components/modules/Contact/ContactDetails";
 import CreateAddress from "@/components/modules/Availability/CreateAddress";
+import ViewInspectDetails from "@/components/modules/Inspection/InspectionDetails";
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
       {
         path: "/locations/view/:id",
         Component: CategoryDetailPage,
+      },
+      {
+        path: "/inspection/view/:id",
+        Component: ViewInspectDetails,
       },
       {
         path: "/category/edit/:slug",
