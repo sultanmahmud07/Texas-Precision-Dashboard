@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import {
   Calendar as CalendarIcon,
@@ -23,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery } from "@/redux/features/availability/availability";
+import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery, useRemoveAvailabilityMutation } from "@/redux/features/availability/availability";
 import { IApiError } from "@/types";
 import { IAvailability } from "@/types/availability.interface";
 
@@ -58,6 +59,7 @@ const formatDateString = (d: Date) => {
 export default function ManageAvailability() {
   const { data: apiData, isLoading: isGetLoading } = useGetAllAvailabilitiesQuery(null);
   const [createAvailability, { isLoading }] = useAddAvailabilityMutation();
+  const [removeAvailability] = useRemoveAvailabilityMutation();
 
   // --- Calendar State ---
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
@@ -71,18 +73,15 @@ export default function ManageAvailability() {
   useEffect(() => {
     if (apiData?.data && Array.isArray(apiData.data)) {
       const initialMap: Record<string, string[]> = {};
-      
-      // Assuming apiData.data is an array of schedule objects:
-      // { date: "2026-04-29", slots: ["09:00", "10:30"], timezone: "..." }
+
       apiData.data.forEach((schedule: IAvailability) => {
         if (schedule.date && schedule.slots) {
           initialMap[schedule.date] = schedule.slots;
         }
       });
-      
+
       setSelectedDatesMap(initialMap);
 
-      // Optionally set timezone from the first record if they all share one
       if (apiData.data.length > 0 && apiData.data[0].timezone) {
         setTimezone(apiData.data[0].timezone);
       }
@@ -111,6 +110,7 @@ export default function ManageAvailability() {
   const nextMonth = () => setCurrentMonthDate(new Date(currentYear, currentMonth + 1, 1));
 
   // --- Handlers ---
+  // --- Handlers ---
   const toggleDateSelection = (date: Date) => {
     const dateStr = formatDateString(date);
     setSelectedDatesMap((prev) => {
@@ -125,6 +125,23 @@ export default function ManageAvailability() {
       return newMap;
     });
   };
+  const handleDateSelection = async (date: Date) => {
+    console.log(date)
+    const toastId = toast.loading("Removing availability...");
+    try {
+      const res = await removeAvailability(date).unwrap();
+
+      if (res.success) {
+        toast.dismiss(toastId);
+        toast.success("Availability deleted successfully");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.dismiss(toastId);
+      const error = err as IApiError;
+      toast.error(error?.data?.message || "Failed to delete availability");
+    }
+  };
 
   const toggleTimeSlot = (dateStr: string, slot: string) => {
     setSelectedDatesMap((prev) => {
@@ -132,10 +149,8 @@ export default function ManageAvailability() {
       const newMap = { ...prev };
 
       if (currentSlots.includes(slot)) {
-        // Remove slot
         newMap[dateStr] = currentSlots.filter((s) => s !== slot);
       } else {
-        // Add slot and keep sorted
         newMap[dateStr] = [...currentSlots, slot].sort();
       }
       return newMap;
@@ -151,16 +166,14 @@ export default function ManageAvailability() {
       return;
     }
 
-    // 1. Format the array of schedules exactly as requested
     const schedulesArray = dates.map((dateStr) => ({
       date: dateStr,
       timezone: timezone,
       slots: selectedDatesMap[dateStr],
       bookingMode: "EXACT_TIME",
-      serviceType: "Roofing" // This can be made dynamic if needed
+      serviceType: "Roofing"
     }));
 
-    // 2. WRAP the array in an object so Zod validation passes!
     const payload = {
       schedules: schedulesArray
     };
@@ -188,6 +201,12 @@ export default function ManageAvailability() {
   const isToday = (date: Date) => formatDateString(date) === formatDateString(new Date());
 
   const sortedSelectedDates = Object.keys(selectedDatesMap).sort();
+
+  // ONLY SHOW DATES IN THE RIGHT PANEL IF THEY MATCH THE CALENDAR'S CURRENT MONTH
+  const visibleSelectedDates = sortedSelectedDates.filter((dateStr) => {
+    const d = new Date(`${dateStr}T00:00:00`);
+    return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+  });
 
   if (isGetLoading) {
     return (
@@ -273,7 +292,7 @@ export default function ManageAvailability() {
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-y-2 gap-x-1 justify-items-center">
               {calendarCells.map((date, index) => {
-                if (!date) return <div key={`empty-${index}`} className="w-8 h-8 md:w-10 md:h-10" />; // Empty cell padding
+                if (!date) return <div key={`empty-${index}`} className="w-8 h-8 md:w-10 md:h-10" />;
 
                 const selected = isDateSelected(date);
                 const today = isToday(date);
@@ -317,20 +336,20 @@ export default function ManageAvailability() {
             <div>
               <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300">Time Slot Configuration</h4>
               <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1 leading-relaxed">
-                Slots auto-generate from 9:00 AM to 6:00 PM (1.5h intervals) for every selected date. Click a pill to remove/add specific times.
+                Showing slots for <strong>{currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</strong>. Slots auto-generate from 9:00 AM to 6:00 PM (1.5h intervals).
               </p>
             </div>
           </div>
 
-          {sortedSelectedDates.length === 0 ? (
+          {visibleSelectedDates.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 md:py-20 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-2xl px-4 text-center">
               <CalendarIcon className="w-10 h-10 md:w-12 md:h-12 text-gray-300 dark:text-zinc-700 mb-4" />
               <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 font-medium">Select dates from the calendar to configure slots.</p>
             </div>
           ) : (
             <div className="space-y-4 md:space-y-6">
-              {sortedSelectedDates.map((dateStr) => {
-                const dateObj = new Date(`${dateStr}T00:00:00`); // Ensure local parsing
+              {visibleSelectedDates.map((dateStr) => {
+                const dateObj = new Date(`${dateStr}T00:00:00`);
                 const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
                 const friendlyDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const selectedSlotsForDay = selectedDatesMap[dateStr];

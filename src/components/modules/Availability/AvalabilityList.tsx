@@ -1,14 +1,6 @@
 import { DeleteConfirmation } from "@/components/DeleteConfirmation";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -16,12 +8,21 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Edit, EyeIcon, Image as ImageIcon, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Edit, MapPin, Trash2, Search, Plus, MapPinned, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Link } from "react-router";
 import { formatDate } from "@/utils/getDateFormater";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -33,87 +34,132 @@ import {
 } from "@/components/ui/select";
 import { IApiError } from "@/types";
 import TableSkeleton from "../loader/Receiver/TableSkeleton";
-import {
-  useGetAllCategoriesQuery,
-  useRemoveCategoryMutation,
-} from "@/redux/features/category/category.api";
+import { cn } from "@/lib/utils";
 
-// 1. Define the interface based on your JSON response
-export interface ICategory {
+// Assuming you have the add mutation in your API slice
+import {
+  useGetAllAddressesQuery,
+  useRemoveAddressMutation,
+  useAddAddressMutation // Added this import
+} from "@/redux/features/address/address";
+
+export interface ILocation {
   _id: string;
-  name: string;
-  slug: string;
-  thumbnail?: string;
-  description?: string;
-  visibility?: boolean;
-  order?: number;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  type: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export default function AvailabilitiesList() {
+  // --- List State ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(9); // Changed to 12 so grid of 3 looks even (4 rows)
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("");
 
-  const { data, isLoading } = useGetAllCategoriesQuery({
+  // --- Modal Form State ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    street: "",
+    city: "",
+    state: "TX",
+    zip: "",
+    type: "STANDARD_ESTIMATE"
+  });
+
+  // --- API Hooks ---
+  const { data, isLoading } = useGetAllAddressesQuery({
     page: currentPage,
     limit,
     searchTerm,
     sort: sortOrder,
   });
-
-  const [removeCategory] = useRemoveCategoryMutation();
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleSortChange = (value: string) => {
-    setSortOrder(value);
-  };
-
-  // 2. Updated to handle categories instead of users
-  const handleRemoveCategory = async (categoryId: string) => {
-    const toastId = toast.loading("Removing category...");
-    try {
-      const res = await removeCategory(categoryId).unwrap();
-      
-      if (res.success) {
-        toast.dismiss(toastId);
-        toast.success("Category deleted successfully");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.dismiss(toastId);
-      const error = err as IApiError;
-      toast.error(error?.data?.message || "Failed to delete category");
-    }
-  };
+  const [removeLocation] = useRemoveAddressMutation();
+  const [addAddress, { isLoading: isAdding }] = useAddAddressMutation();
 
   const totalPage = data?.meta?.totalPage || 1;
 
+  // --- Handlers ---
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value);
+  const handleSortChange = (value: string) => setSortOrder(value);
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleTypeChange = (value: string) => {
+    setFormData({ ...formData, type: value });
+  };
+
+  const handleAddLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const toastId = toast.loading("Adding new location...");
+
+    try {
+      const res = await addAddress(formData).unwrap();
+      if (res.success) {
+        toast.success("Location added successfully!", { id: toastId });
+        setIsAddModalOpen(false);
+        setFormData({ street: "", city: "", state: "TX", zip: "", type: "STANDARD_ESTIMATE" }); // Reset
+      }
+    } catch (err) {
+      console.error(err);
+      const error = err as IApiError;
+      toast.error(error?.data?.message || "Failed to add location", { id: toastId });
+    }
+  };
+
+  const handleRemoveLocation = async (locationId: string) => {
+    const toastId = toast.loading("Removing location...");
+    try {
+      const res = await removeLocation(locationId).unwrap();
+      if (res.success) {
+        toast.success("Location deleted successfully", { id: toastId });
+      }
+    } catch (err) {
+      console.error(err);
+      const error = err as IApiError;
+      toast.error(error?.data?.message || "Failed to delete location", { id: toastId });
+    }
+  };
+
+
   return (
-    <div className="w-full bg-white dark:bg-zinc-950 min-h-screen p-6 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800/50">
-      
+    <div className="w-full bg-white dark:bg-zinc-950 md:p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800/50">
+
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Manage Categories
-        </h1>
-        
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <MapPin className="w-6 h-6 text-primary" />
+            Manage Service Locations
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            View and manage your available service areas and branches.
+          </p>
+        </div>
+
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <Input
-            className="w-full sm:w-[250px] bg-gray-50 dark:bg-zinc-900"
-            type="text"
-            placeholder="Search categories..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-[250px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              className="w-full pl-9 bg-gray-50 dark:bg-zinc-900 h-11 rounded-xl border-gray-200 dark:border-zinc-800 focus-visible:ring-primary"
+              type="text"
+              placeholder="Search locations..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+          </div>
+
+          {/* Sort Dropdown */}
           <Select onValueChange={handleSortChange} value={sortOrder}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-gray-50 dark:bg-zinc-900">
-              <SelectValue placeholder="Sort by date" />
+            <SelectTrigger className="w-full md:py-5 sm:w-[160px] bg-gray-50 dark:bg-zinc-900 h-11 rounded-xl border-gray-200 dark:border-zinc-800 focus:ring-primary">
+              <SelectValue placeholder="Sort order" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -123,117 +169,174 @@ export default function AvailabilitiesList() {
               </SelectGroup>
             </SelectContent>
           </Select>
-          
-          {/* Optional: Add Category Button */}
-          <Link to="/category/create">
-             <Button className="w-full sm:w-auto bg-primary hover:bg-secondary cursor-pointer transition text-white">
-                Add Category
-             </Button>
-          </Link>
+
+          {/* Add Button with Popup Modal */}
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto bg-primary hover:bg-[#16965f] text-white h-11 rounded-xl px-6">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Location
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg bg-white dark:bg-zinc-950 border-gray-100 dark:border-zinc-800">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <MapPinned className="w-5 h-5 text-primary" />
+                  Add New Location
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddLocation} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Street Address</Label>
+                  <Input
+                    name="street"
+                    placeholder="e.g. 1900 N Akard St"
+                    value={formData.street}
+                    onChange={handleFormChange}
+                    required
+                    className="bg-gray-50 dark:bg-zinc-900"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>City</Label>
+                    <Input
+                      name="city"
+                      placeholder="e.g. Dallas"
+                      value={formData.city}
+                      onChange={handleFormChange}
+                      required
+                      className="bg-gray-50 dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>State</Label>
+                    <Input
+                      name="state"
+                      placeholder="e.g. TX"
+                      defaultValue="TX"
+                      value={formData.state}
+                      onChange={handleFormChange}
+                      required
+                      maxLength={2}
+                      className="bg-gray-50 dark:bg-zinc-900 uppercase"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>ZIP Code</Label>
+                    <Input
+                      name="zip"
+                      placeholder="e.g. 75201"
+                      value={formData.zip}
+                      onChange={handleFormChange}
+                      required
+                      className="bg-gray-50 dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Location Type</Label>
+                    <Select value={formData.type} onValueChange={handleTypeChange}>
+                      <SelectTrigger className="bg-gray-50 dark:bg-zinc-900">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DFW_ESTIMATE">DFW Estimate</SelectItem>
+                        <SelectItem value="STANDARD_ESTIMATE">Standard Estimate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-primary hover:bg-[#16965f] text-white" disabled={isAdding}>
+                    {isAdding ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Location"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
         </div>
       </div>
 
-      {/* Table Data */}
+      {/* Grid Data */}
       {isLoading ? (
-        <TableSkeleton />
+        <TableSkeleton /> // You might want to create a GridSkeleton later, but this works for now
       ) : (
-        <div className="rounded-md border border-gray-200 dark:border-zinc-800 overflow-hidden">
-          <Table>
-            <TableHeader className="bg-gray-50 dark:bg-zinc-900/50">
-              <TableRow>
-                {/* <TableHead className="font-semibold">Order</TableHead> */}
-                <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Slug</TableHead>
-                <TableHead className="font-semibold hidden md:table-cell">Description</TableHead>
-                <TableHead className="font-semibold">Created Date</TableHead>
-                <TableHead className="text-right font-semibold">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.data?.length === 0 ? (
-                 <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-gray-500">
-                       No categories found.
-                    </TableCell>
-                 </TableRow>
-              ) : (
-                data?.data.map((category: ICategory) => (
-                  <TableRow key={category._id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/50 transition-colors">
-                    {/* Order */}
-                    {/* <TableCell className="font-semibold text-gray-900 dark:text-gray-100">
-                      {category?.order}
-                    </TableCell> */}
-                    {/* Thumbnail */}
-                    <TableCell>
-                      {category.thumbnail ? (
-                        <img 
-                          src={category.thumbnail} 
-                          alt={category.name} 
-                          className="w-10 h-10 rounded-md object-cover border border-gray-200 dark:border-zinc-700"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-400">
-                          <ImageIcon size={20} />
-                        </div>
-                      )}
-                    </TableCell>
+        <>
+          {data?.data?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-2xl">
+              <MapPinned className="w-12 h-12 text-gray-300 dark:text-zinc-700 mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No locations found.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+              {data?.data.map((location: ILocation) => (
+                <Card key={location._id} className="border border-gray-200 dark:border-zinc-800/60 shadow-sm rounded-2xl bg-white dark:bg-secondary/60 hover:shadow-md transition-all gap-0 md:gap-2 group overflow-hidden flex flex-col">
 
-                    {/* Name */}
-                    <TableCell className="font-semibold text-gray-900 dark:text-gray-100">
-                      {category.name.slice(0, 30)}
-                    </TableCell>
+                  {/* Header: Title, Badge, and Address */}
+                  <CardHeader className="p-3 md:px-5  flex flex-row items-start justify-between gap-2">
+                    <div className="space-y-2 overflow-hidden w-full">
+                      <div className="flex items-start justify-between gap-2 w-full">
+                        <CardTitle className="text-lg font-bold text-gray-900 dark:text-white truncate" title={location.street}>
+                          {location.street}
+                        </CardTitle>
+                        {/* Tiny Type Badge */}
+                        <span className={cn(
+                          "shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-[8px] md:text-[10px] font-bold tracking-wide uppercase border",
+                          location.type === "DFW_ESTIMATE"
+                            ? "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-100 dark:border-blue-900"
+                            : "bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-100 dark:border-purple-900"
+                        )}>
+                          {location.type.split('_')[0]}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1.5 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        {location.city}, {location.state} {location.zip}
+                      </p>
+                    </div>
+                  </CardHeader>
 
-                    {/* Slug */}
-                    <TableCell className="text-gray-500 dark:text-gray-400">
-                      <span className="px-2 py-1 bg-gray-100 dark:bg-zinc-800 rounded-md text-xs font-mono">
-                        /{category.slug.slice(0, 20)}
-                      </span>
-                    </TableCell>
+                  <div className="flex-1" />
 
-                    {/* Description (Truncated) */}
-                    <TableCell className="hidden md:table-cell text-gray-500 dark:text-gray-400 max-w-[200px] truncate">
-                      {category?.description?.slice(0, 10) || "No description"}
-                    </TableCell>
-
-                    {/* Date */}
-                    <TableCell className="text-gray-500 dark:text-gray-400">
-                      {formatDate(category.createdAt)}
-                    </TableCell>
+                  {/* Footer: Small Date and Actions */}
+                  <CardFooter className="p-2 py-0 bg-gray-50/50 dark:bg-zinc-900/30 border-t border-gray-100 dark:border-zinc-800/50 flex flex-col md:flex-row items-center justify-between gap-2 mt-auto">
+                    {/* Small Date */}
+                    <p className="text-xs text-gray-400 text-start dark:text-zinc-500 font-medium">
+                      Added {formatDate(location.createdAt)}
+                    </p>
 
                     {/* Actions */}
-                    <TableCell className="flex items-center justify-end gap-2 mt-1">
-                      <Link to={`/category/view/${category.slug}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                          <EyeIcon size={16} />
-                        </Button>
-                      </Link>
-                      
-                      {/* Assuming you want an edit button eventually */}
-                      <Link to={`/category/edit/${category.slug}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                          <Edit size={16} />
+                    <div className="flex items-center gap-1">
+                      <Link to={`/admin/locations/edit/${location._id}`}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                          <Edit className="w-3.5 h-3.5 mr-1.5" /> Edit
                         </Button>
                       </Link>
 
-                      <DeleteConfirmation onConfirm={() => handleRemoveCategory(category._id)}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <Trash2 size={16} />
+                      <DeleteConfirmation onConfirm={() => handleRemoveLocation(location._id)}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
                         </Button>
                       </DeleteConfirmation>
-                    </TableCell>
+                    </div>
+                  </CardFooter>
 
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Pagination */}
       {totalPage > 1 && (
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-end mt-8 pt-4 border-t border-gray-100 dark:border-zinc-800/50">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
@@ -242,7 +345,7 @@ export default function AvailabilitiesList() {
                   className={
                     currentPage === 1
                       ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
+                      : "cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl"
                   }
                 />
               </PaginationItem>
@@ -253,7 +356,12 @@ export default function AvailabilitiesList() {
                     onClick={() => setCurrentPage(page)}
                   >
                     <PaginationLink
-                      className="cursor-pointer"
+                      className={cn(
+                        "cursor-pointer rounded-xl transition-colors",
+                        currentPage === page
+                          ? "bg-primary text-white hover:bg-[#16965f] hover:text-white border-transparent"
+                          : "hover:bg-gray-100 dark:hover:bg-zinc-800"
+                      )}
                       isActive={currentPage === page}
                     >
                       {page}
@@ -267,7 +375,7 @@ export default function AvailabilitiesList() {
                   className={
                     currentPage === totalPage
                       ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
+                      : "cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl"
                   }
                 />
               </PaginationItem>

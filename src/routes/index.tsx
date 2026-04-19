@@ -17,11 +17,11 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import CategoryDetailPage from "@/pages/Category/CategoryDetails";
 import EditCategory from "@/pages/Category/EditCategory";
-import AddCategory from "@/pages/Category/AddCategory";
 import EditProduct from "@/pages/Product/EditProduct";
 import ProductDetails from "@/pages/Product/ProductDetails";
 import AddAdmin from "@/components/modules/Admin/AddAdmin";
 import ContactDetails from "@/components/modules/Contact/ContactDetails";
+import CreateAddress from "@/components/modules/Availability/CreateAddress";
 
 export const router = createBrowserRouter([
   {
@@ -50,11 +50,11 @@ export const router = createBrowserRouter([
         Component: EditBlog,
       },
       {
-        path: "/category/create",
-        Component: AddCategory,
+        path: "/locations/create",
+        Component: CreateAddress,
       },
       {
-        path: "/category/view/:slug",
+        path: "/locations/view/:id",
         Component: CategoryDetailPage,
       },
       {
