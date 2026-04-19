@@ -15,7 +15,6 @@ import Analytics from "@/pages/Analytics/Analytics";
 import EditBlog from "@/components/modules/Blogs/EditBlog/EditBlog";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
-import CategoryDetailPage from "@/pages/Category/CategoryDetails";
 import EditCategory from "@/pages/Category/EditCategory";
 import EditProduct from "@/pages/Product/EditProduct";
 import ProductDetails from "@/pages/Product/ProductDetails";
@@ -23,6 +22,7 @@ import AddAdmin from "@/components/modules/Admin/AddAdmin";
 import ContactDetails from "@/components/modules/Contact/ContactDetails";
 import CreateAddress from "@/components/modules/Availability/CreateAddress";
 import ViewInspectDetails from "@/components/modules/Inspection/InspectionDetails";
+import UpdateAddress from "@/components/modules/Availability/UpdateAddress";
 
 export const router = createBrowserRouter([
   {
@@ -55,8 +55,8 @@ export const router = createBrowserRouter([
         Component: CreateAddress,
       },
       {
-        path: "/locations/view/:id",
-        Component: CategoryDetailPage,
+        path: "/locations/edit/:id",
+        Component: UpdateAddress,
       },
       {
         path: "/inspection/view/:id",

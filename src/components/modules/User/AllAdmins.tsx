@@ -109,7 +109,7 @@ export default function AllAdminList() {
 
           {/* Sort Dropdown */}
           <Select onValueChange={handleSortChange} value={sortOrder}>
-            <SelectTrigger className="w-full sm:w-[160px] bg-gray-50 dark:bg-zinc-900 h-11 rounded-xl">
+            <SelectTrigger className="w-full py-5 sm:w-[160px] bg-gray-50 dark:bg-zinc-900 h-11 rounded-xl">
               <SelectValue placeholder="Sort order" />
             </SelectTrigger>
             <SelectContent>

@@ -40,12 +40,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import TableSkeleton from "../loader/Receiver/TableSkeleton";
 import { cn } from "@/lib/utils";
 
 // Adjust these imports to point to your actual inspection API slice
 import { useGetAllInspectionsQuery, useRemoveInspectionMutation } from "@/redux/features/inspection/inspection.api";
 import { InspectionActionMenu } from "./InspectionActionMenu";
+import InspectionSkeleton from "../loader/InspectionSkeleton";
 
 // Updated Interface based on your JSON response
 export interface IInspection {
@@ -161,7 +161,7 @@ export default function AllInspectionList() {
 
       {/* Table Section */}
       {isLoading ? (
-        <TableSkeleton />
+        <InspectionSkeleton />
       ) : (
         <div className="rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
           <Table>

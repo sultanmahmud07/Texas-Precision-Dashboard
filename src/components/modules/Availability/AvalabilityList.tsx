@@ -33,7 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IApiError } from "@/types";
-import TableSkeleton from "../loader/Receiver/TableSkeleton";
 import { cn } from "@/lib/utils";
 
 // Assuming you have the add mutation in your API slice
@@ -42,6 +41,7 @@ import {
   useRemoveAddressMutation,
   useAddAddressMutation // Added this import
 } from "@/redux/features/address/address";
+import AddressSkeleton from "../loader/AddressSkeleton";
 
 export interface ILocation {
   _id: string;
@@ -265,7 +265,7 @@ export default function AvailabilitiesList() {
 
       {/* Grid Data */}
       {isLoading ? (
-        <TableSkeleton /> // You might want to create a GridSkeleton later, but this works for now
+        <AddressSkeleton /> // You might want to create a GridSkeleton later, but this works for now
       ) : (
         <>
           {data?.data?.length === 0 ? (
@@ -313,7 +313,7 @@ export default function AvailabilitiesList() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1">
-                      <Link to={`/admin/locations/edit/${location._id}`}>
+                      <Link to={`/locations/edit/${location._id}`}>
                         <Button variant="ghost" size="sm" className="h-8 px-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
                           <Edit className="w-3.5 h-3.5 mr-1.5" /> Edit
                         </Button>

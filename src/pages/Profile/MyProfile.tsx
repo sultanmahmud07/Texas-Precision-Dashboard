@@ -16,12 +16,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { formatDate } from "@/utils/getDateFormater";
 import { useChangePasswordMutation, useUserInfoQuery } from "@/redux/features/auth/auth.api";
-// Note: You will need to create this mutation in your API slice to handle the actual image upload
-import Loader from "../Spinner";
 import { IApiError } from "@/types";
 import { Camera, Shield, Mail, User, CalendarDays, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUpdateProfileMutation } from "@/redux/features/user/user.api";
+import ProfileSkeleton from "@/components/modules/loader/ProfileSkeleton";
 
 // ---- Zod schema for password change ----
 const passwordSchema = z
@@ -117,7 +116,7 @@ const MyProfile = ({ className }: React.HTMLAttributes<HTMLDivElement>) => {
   };
 
   if (isLoading) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader /></div>;
+    return <ProfileSkeleton />;
   }
 
   const user = userInfo?.data;

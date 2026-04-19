@@ -27,6 +27,7 @@ import {
 import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery, useRemoveAvailabilityMutation } from "@/redux/features/availability/availability";
 import { IApiError } from "@/types";
 import { IAvailability } from "@/types/availability.interface";
+import AvailableSkeleton from "../loader/AvailableSkeleton";
 
 // Default time slots: 9:00 AM to 6:00 PM with 1.5h gaps
 const DEFAULT_SLOTS = [
@@ -210,10 +211,7 @@ export default function ManageAvailability() {
 
   if (isGetLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1BAE70]" />
-        <p className="text-gray-500 font-medium">Loading existing availability...</p>
-      </div>
+      <AvailableSkeleton />
     );
   }
 
