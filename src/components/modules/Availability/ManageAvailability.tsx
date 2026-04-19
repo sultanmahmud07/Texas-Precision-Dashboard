@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -23,9 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useNavigate } from "react-router";
 import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery } from "@/redux/features/availability/availability";
 import { IApiError } from "@/types";
+import { IAvailability } from "@/types/availability.interface";
 
 // Default time slots: 9:00 AM to 6:00 PM with 1.5h gaps
 const DEFAULT_SLOTS = [
@@ -56,11 +56,9 @@ const formatDateString = (d: Date) => {
 };
 
 export default function ManageAvailability() {
-  const navigate = useNavigate();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { data, isLoading: isGetLoading } = useGetAllAvailabilitiesQuery(null);
+  const { data: apiData, isLoading: isGetLoading } = useGetAllAvailabilitiesQuery(null);
   const [createAvailability, { isLoading }] = useAddAvailabilityMutation();
-  console.log(data);
+
   // --- Calendar State ---
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
   const [timezone, setTimezone] = useState("America/Chicago");
@@ -68,6 +66,29 @@ export default function ManageAvailability() {
   // --- Data State ---
   // Structure: { "2026-04-20": ["09:00", "10:30", ...], "2026-04-21": [...] }
   const [selectedDatesMap, setSelectedDatesMap] = useState<Record<string, string[]>>({});
+
+  // --- INITIALIZE PREVIOUS DATA ---
+  useEffect(() => {
+    if (apiData?.data && Array.isArray(apiData.data)) {
+      const initialMap: Record<string, string[]> = {};
+      
+      // Assuming apiData.data is an array of schedule objects:
+      // { date: "2026-04-29", slots: ["09:00", "10:30"], timezone: "..." }
+      apiData.data.forEach((schedule: IAvailability) => {
+        if (schedule.date && schedule.slots) {
+          initialMap[schedule.date] = schedule.slots;
+        }
+      });
+      
+      setSelectedDatesMap(initialMap);
+
+      // Optionally set timezone from the first record if they all share one
+      if (apiData.data.length > 0 && apiData.data[0].timezone) {
+        setTimezone(apiData.data[0].timezone);
+      }
+    }
+  }, [apiData]);
+
 
   // --- Calendar Logic ---
   const currentYear = currentMonthDate.getFullYear();
@@ -149,13 +170,12 @@ export default function ManageAvailability() {
       const res = await createAvailability(payload).unwrap();
       if (res.success) {
         toast.success(`Successfully saved ${schedulesArray.length} day(s) of availability!`, { id: toastId });
-        navigate("/available-locations");
       }
 
     } catch (err) {
       console.error(err);
       const error = err as IApiError;
-      toast.error(error?.data?.message || "Failed to publish blog", { id: toastId });
+      toast.error(error?.data?.message || "Failed to publish availability", { id: toastId });
       if (error?.data?.errorSources) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         error?.data?.errorSources.forEach((er: any) => toast.error(er.message));
@@ -169,6 +189,15 @@ export default function ManageAvailability() {
 
   const sortedSelectedDates = Object.keys(selectedDatesMap).sort();
 
+  if (isGetLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1BAE70]" />
+        <p className="text-gray-500 font-medium">Loading existing availability...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto p-0 md:p-5 space-y-6">
 
@@ -176,7 +205,7 @@ export default function ManageAvailability() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <CalendarIcon className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+            <CalendarIcon className="w-6 h-6 md:w-7 md:h-7 text-[#1BAE70]" />
             Manage Availability
           </h1>
           <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">

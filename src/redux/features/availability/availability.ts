@@ -40,7 +40,7 @@ export const availabilityApi = baseApi.injectEndpoints({
                         method: "GET",
                         params: params,
                   }),
-                  providesTags: ["CATEGORY"],
+                  providesTags: ["AVAILABILITY"],
                   transformResponse: (response) => response,
             }),
       }),
