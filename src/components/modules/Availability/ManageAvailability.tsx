@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery, useRemoveAvailabilityMutation } from "@/redux/features/availability/availability";
+import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery } from "@/redux/features/availability/availability";
 import { IApiError } from "@/types";
 import { IAvailability } from "@/types/availability.interface";
 import AvailableSkeleton from "../loader/AvailableSkeleton";
@@ -60,7 +60,7 @@ const formatDateString = (d: Date) => {
 export default function ManageAvailability() {
   const { data: apiData, isLoading: isGetLoading } = useGetAllAvailabilitiesQuery(null);
   const [createAvailability, { isLoading }] = useAddAvailabilityMutation();
-  const [removeAvailability] = useRemoveAvailabilityMutation();
+  // const [removeAvailability] = useRemoveAvailabilityMutation();
 
   // --- Calendar State ---
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
@@ -126,23 +126,23 @@ export default function ManageAvailability() {
       return newMap;
     });
   };
-  const handleDateSelection = async (date: Date) => {
-    console.log(date)
-    const toastId = toast.loading("Removing availability...");
-    try {
-      const res = await removeAvailability(date).unwrap();
+  // const handleDateSelection = async (date: Date) => {
+  //   console.log(date)
+  //   const toastId = toast.loading("Removing availability...");
+  //   try {
+  //     const res = await removeAvailability(date).unwrap();
 
-      if (res.success) {
-        toast.dismiss(toastId);
-        toast.success("Availability deleted successfully");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.dismiss(toastId);
-      const error = err as IApiError;
-      toast.error(error?.data?.message || "Failed to delete availability");
-    }
-  };
+  //     if (res.success) {
+  //       toast.dismiss(toastId);
+  //       toast.success("Availability deleted successfully");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.dismiss(toastId);
+  //     const error = err as IApiError;
+  //     toast.error(error?.data?.message || "Failed to delete availability");
+  //   }
+  // };
 
   const toggleTimeSlot = (dateStr: string, slot: string) => {
     setSelectedDatesMap((prev) => {

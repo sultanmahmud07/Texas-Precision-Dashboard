@@ -3,14 +3,13 @@ import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, Cart
 import { Package, CheckCircle2, Truck, Clock } from "lucide-react";
 import { useGetSenderAnalyticsQuery } from "@/redux/features/sender/sender.api";
 import SenderRecentParcelList from "./RecentParcelList";
-import AnalyticsSkeleton from "../loader/Receiver/AnalyticsSkeleton";
 
 const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EF4444"];
 
 const SenderAnalytics = () => {
   const { data, isLoading } = useGetSenderAnalyticsQuery(undefined);
 
-  if (isLoading) return <AnalyticsSkeleton></AnalyticsSkeleton>;
+  if (isLoading) return <p>Loading...</p>;
 
   const { totalParcels, delivered, inTransit, pending, canceled, monthlyShipments } =
     data?.data || {};
@@ -22,6 +21,7 @@ const SenderAnalytics = () => {
     { name: "Canceled", value: canceled },
   ];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const monthlyData = monthlyShipments?.map((m: any) => ({
     month: new Date(2025, m._id - 1).toLocaleString("default", { month: "short" }),
     count: m.count,

@@ -8,7 +8,7 @@ export const parcelApi = baseApi.injectEndpoints({
                         method: "POST",
                         data: parcelData,
                   }),
-                  invalidatesTags: ["PARCEL"],
+                  invalidatesTags: ["PRODUCT"],
             }),
             updateParcelByAdmin: builder.mutation({
                   query: ({ parcelId, parcelInfo }) => ({
@@ -16,7 +16,7 @@ export const parcelApi = baseApi.injectEndpoints({
                         method: "PATCH",
                         data: parcelInfo, 
                   }),
-                  invalidatesTags: ["PARCEL"],
+                  invalidatesTags: ["PRODUCT"],
             }),
             blockParcelByAdmin: builder.mutation({
                   query: ({ parcelId, parcelInfo }) => ({
@@ -24,28 +24,28 @@ export const parcelApi = baseApi.injectEndpoints({
                         method: "PATCH",
                         data: parcelInfo, 
                   }),
-                  invalidatesTags: ["PARCEL"],
+                  invalidatesTags: ["PRODUCT"],
             }),
             removeParcel: builder.mutation({
                   query: (parcelId) => ({
                         url: `/parcel/${parcelId}`,
                         method: "DELETE",
                   }),
-                  invalidatesTags: ["PARCEL"],
+                  invalidatesTags: ["PRODUCT"],
             }),
             cancelParcelBySender: builder.mutation({
                   query: (parcelId) => ({
                         url: `/parcel/cancel/${parcelId}`,
                         method: "PATCH",
                   }),
-                  invalidatesTags: ["PARCEL"],
+                  invalidatesTags: ["PRODUCT"],
             }),
             deliveryParcelByReceiver: builder.mutation({
                   query: (parcelId) => ({
                         url: `/parcel/delivery/${parcelId}`,
                         method: "PATCH",
                   }),
-                  invalidatesTags: ["PARCEL"],
+                  invalidatesTags: ["PRODUCT"],
             }),
             getParcelBySender: builder.query({
                   query: (params) => ({
@@ -53,7 +53,7 @@ export const parcelApi = baseApi.injectEndpoints({
                         method: "GET",
                         params,
                   }),
-                  providesTags: ["PARCEL"],
+                  providesTags: ["PRODUCT"],
                   transformResponse: (response) => response.data,
             }),
             getParcelByReceiver: builder.query({
@@ -62,7 +62,7 @@ export const parcelApi = baseApi.injectEndpoints({
                         method: "GET",
                         params,
                   }),
-                  providesTags: ["PARCEL"],
+                  providesTags: ["PRODUCT"],
                   transformResponse: (response) => response.data,
             }),
             getParcelDetails: builder.query({
@@ -85,7 +85,7 @@ export const parcelApi = baseApi.injectEndpoints({
                         method: "GET",
                         params: params,
                   }),
-                  providesTags: ["PARCEL"],
+                  providesTags: ["PRODUCT"],
                   transformResponse: (response) => response,
             }),
       }),
