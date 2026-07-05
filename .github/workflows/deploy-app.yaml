@@ -46,7 +46,7 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
           # 1. Create a specific directory for the React dashboard
-          ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST "mkdir -p ~/amkov-dashboard"
+          ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST "mkdir -p ~/texus-dashboard"
 
 
           # 3. Copy files to EC2 instance
@@ -54,7 +54,7 @@ jobs:
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.github' \
-            . $EC2_USER@$EC2_HOST:~/amkov-dashboard/
+            . $EC2_USER@$EC2_HOST:~/texus-dashboard/
 
           # 4. Execute deployment commands safely
           ssh -i ~/.ssh/id_rsa $EC2_USER@$EC2_HOST << 'EOF'
@@ -64,7 +64,7 @@ jobs:
             # Ensure PM2 and the static 'serve' package are installed globally
             npm install -g pm2 serve
             
-            cd ~/amkov-dashboard
+            cd ~/texus-dashboard
             
             # Restart or start the React PM2 process on Port 3001
             # NOTE: If you used Create React App instead of Vite, change 'dist' to 'build' below!
