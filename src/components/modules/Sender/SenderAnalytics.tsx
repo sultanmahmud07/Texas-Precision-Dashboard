@@ -75,7 +75,6 @@ const SenderAnalytics = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Status Distribution</CardTitle>

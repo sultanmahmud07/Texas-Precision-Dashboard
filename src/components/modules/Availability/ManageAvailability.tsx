@@ -98,11 +98,9 @@ export default function ManageAvailability() {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
   const calendarCells = [];
-  // Pad empty days at start of month
   for (let i = 0; i < firstDayOfMonth; i++) {
     calendarCells.push(null);
   }
-  // Fill actual days
   for (let i = 1; i <= daysInMonth; i++) {
     calendarCells.push(new Date(currentYear, currentMonth, i));
   }
