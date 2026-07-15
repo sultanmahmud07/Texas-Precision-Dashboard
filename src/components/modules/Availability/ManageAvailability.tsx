@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAddAvailabilityMutation, useGetAllAvailabilitiesQuery } from "@/redux/features/availability/availability";
+import { useGetBookedSlotsQuery } from "@/redux/features/inspection/inspection.api";
 import { IApiError } from "@/types";
 import { IAvailability } from "@/types/availability.interface";
 import AvailableSkeleton from "../loader/AvailableSkeleton";
@@ -57,8 +58,30 @@ const formatDateString = (d: Date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+// Helper to normalize scheduled time string (e.g. "3:00 PM CDT" -> "3:00 PM")
+const normalizeScheduledTime = (scheduledTime: string): string => {
+  const parts = scheduledTime.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const timePart = parts[0];
+    const ampmPart = parts[1].toUpperCase();
+    const [h, m] = timePart.split(':');
+    const displayHours = parseInt(h, 10).toString();
+    return `${displayHours}:${m} ${ampmPart}`;
+  }
+  return scheduledTime;
+};
+
+interface IBookedSlot {
+  _id: string;
+  scheduledDate: string;
+  scheduledTime: string;
+}
+
 export default function ManageAvailability() {
   const { data: apiData, isLoading: isGetLoading } = useGetAllAvailabilitiesQuery(null);
+  const { data: bookedSlotsData, isLoading: isBookedLoading } = useGetBookedSlotsQuery(undefined);
+  const bookedSlots: IBookedSlot[] = bookedSlotsData?.data || [];
+
   const [createAvailability, { isLoading }] = useAddAvailabilityMutation();
   // const [removeAvailability] = useRemoveAvailabilityMutation();
 
@@ -108,10 +131,26 @@ export default function ManageAvailability() {
   const prevMonth = () => setCurrentMonthDate(new Date(currentYear, currentMonth - 1, 1));
   const nextMonth = () => setCurrentMonthDate(new Date(currentYear, currentMonth + 1, 1));
 
+  // Helper to check if a specific date and time slot is booked
+  const getIsBooked = (dateStr: string, slot24: string) => {
+    return bookedSlots.some((booked) => {
+      if (booked.scheduledDate !== dateStr) return false;
+      return formatTimeDisplay(slot24) === normalizeScheduledTime(booked.scheduledTime);
+    });
+  };
+
   // --- Handlers ---
   // --- Handlers ---
   const toggleDateSelection = (date: Date) => {
     const dateStr = formatDateString(date);
+
+    // Prevent deselecting a date with booked slots
+    const hasBookedSlots = bookedSlots.some(booked => booked.scheduledDate === dateStr);
+    if (hasBookedSlots && selectedDatesMap[dateStr]) {
+      toast.warning("This date contains booked slots and cannot be deselected.");
+      return;
+    }
+
     setSelectedDatesMap((prev) => {
       const newMap = { ...prev };
       if (newMap[dateStr]) {
@@ -207,7 +246,7 @@ export default function ManageAvailability() {
     return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
   });
 
-  if (isGetLoading) {
+  if (isGetLoading || isBookedLoading) {
     return (
       <AvailableSkeleton />
     );
@@ -294,20 +333,29 @@ export default function ManageAvailability() {
                 const today = isToday(date);
                 const isPast = date.getTime() < new Date().setHours(0, 0, 0, 0);
 
+                const dateStr = formatDateString(date);
+                const hasBooked = bookedSlots.some(booked => booked.scheduledDate === dateStr);
+
                 return (
                   <button
                     key={index}
                     onClick={() => toggleDateSelection(date)}
                     disabled={isPast}
                     className={cn(
-                      "w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full text-xs md:text-sm font-medium transition-all relative",
+                      "w-8 h-8 md:w-10 md:h-10 flex flex-col items-center justify-center rounded-full text-xs md:text-sm font-medium transition-all relative",
                       isPast && "text-gray-300 dark:text-zinc-700 cursor-not-allowed",
                       !isPast && !selected && "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300",
                       selected && "bg-[#1BAE70] text-white shadow-md hover:bg-[#16965f]",
                       today && !selected && "border-2 border-[#1BAE70] text-[#1BAE70]"
                     )}
                   >
-                    {date.getDate()}
+                    <span>{date.getDate()}</span>
+                    {hasBooked && (
+                      <span className={cn(
+                        "w-1.5 h-1.5 rounded-full absolute bottom-1",
+                        selected ? "bg-white" : "bg-red-500"
+                      )} />
+                    )}
                   </button>
                 );
               })}
@@ -350,52 +398,71 @@ export default function ManageAvailability() {
                 const friendlyDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const selectedSlotsForDay = selectedDatesMap[dateStr];
 
-                return (
-                  <Card key={dateStr} className="border-gray-100 dark:border-zinc-800/60 shadow-sm rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden">
-                    <CardHeader className="bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-800 py-3 flex flex-row items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0 pr-2">
-                        <CalendarIcon className="w-4 h-4 text-[#1BAE70] shrink-0" />
-                        <CardTitle className="text-sm md:text-base font-semibold truncate">{dayName}, {friendlyDate}</CardTitle>
-                      </div>
-                      <button
-                        onClick={() => toggleDateSelection(dateObj)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1.5 shrink-0 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30"
-                        title="Remove Date"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </CardHeader>
-                    <CardContent className="pt-4 pb-5 md:pt-5 md:pb-6">
+                      const hasBookedSlots = bookedSlots.some(booked => booked.scheduledDate === dateStr);
 
-                      {selectedSlotsForDay.length === 0 && (
-                        <div className="flex items-start md:items-center gap-2 text-amber-600 dark:text-amber-500 text-xs md:text-sm mb-4 bg-amber-50 dark:bg-amber-950/30 p-2.5 md:p-2 rounded-lg border border-amber-200 dark:border-amber-900/50 leading-relaxed">
-                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 md:mt-0" />
-                          <span>No time slots available for this day. Users won't be able to book.</span>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 md:gap-3">
-                        {DEFAULT_SLOTS.map((slot) => {
-                          const isActive = selectedSlotsForDay.includes(slot);
-                          return (
+                      return (
+                        <Card key={dateStr} className="border-gray-100 dark:border-zinc-800/60 shadow-sm rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden">
+                          <CardHeader className="bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-800 py-3 flex flex-row items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <CalendarIcon className="w-4 h-4 text-[#1BAE70] shrink-0" />
+                              <CardTitle className="text-sm md:text-base font-semibold truncate">{dayName}, {friendlyDate}</CardTitle>
+                            </div>
                             <button
-                              key={slot}
-                              onClick={() => toggleTimeSlot(dateStr, slot)}
+                              onClick={() => toggleDateSelection(dateObj)}
+                              disabled={hasBookedSlots}
                               className={cn(
-                                "py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium border-2 transition-all duration-200 w-full md:w-[120px] flex items-center justify-center",
-                                isActive
-                                  ? "border-[#1BAE70] bg-[#1BAE70]/10 text-[#1BAE70] dark:bg-[#1BAE70]/20"
-                                  : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-zinc-700"
+                                "transition-colors p-1.5 shrink-0 rounded-md",
+                                hasBookedSlots
+                                  ? "text-gray-300 dark:text-zinc-700 cursor-not-allowed"
+                                  : "text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                               )}
+                              title={hasBookedSlots ? "Cannot remove date with booked slots" : "Remove Date"}
                             >
-                              {formatTimeDisplay(slot)}
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
+                          </CardHeader>
+                          <CardContent className="pt-4 pb-5 md:pt-5 md:pb-6">
+
+                            {selectedSlotsForDay.length === 0 && (
+                              <div className="flex items-start md:items-center gap-2 text-amber-600 dark:text-amber-500 text-xs md:text-sm mb-4 bg-amber-50 dark:bg-amber-950/30 p-2.5 md:p-2 rounded-lg border border-amber-200 dark:border-amber-900/50 leading-relaxed">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 md:mt-0" />
+                                <span>No time slots available for this day. Users won't be able to book.</span>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 md:gap-3">
+                              {DEFAULT_SLOTS.map((slot) => {
+                                const isActive = selectedSlotsForDay.includes(slot);
+                                const isBooked = getIsBooked(dateStr, slot);
+                                return (
+                                  <button
+                                    key={slot}
+                                    onClick={() => !isBooked && toggleTimeSlot(dateStr, slot)}
+                                    disabled={isBooked}
+                                    className={cn(
+                                      "py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium border-2 transition-all duration-200 w-full md:w-[120px] flex items-center justify-center",
+                                      isBooked
+                                        ? "border-red-200 bg-red-50/50 text-red-500 cursor-not-allowed dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400"
+                                        : isActive
+                                          ? "border-[#1BAE70] bg-[#1BAE70]/10 text-[#1BAE70] dark:bg-[#1BAE70]/20"
+                                          : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-zinc-700"
+                                    )}
+                                  >
+                                    {isBooked ? (
+                                      <span className="flex flex-col items-center leading-none">
+                                        <span className="text-[10px] md:text-xs font-semibold">{formatTimeDisplay(slot)}</span>
+                                        <span className="text-[9px] uppercase tracking-wider text-red-400 dark:text-red-500 font-bold mt-0.5">Booked</span>
+                                      </span>
+                                    ) : (
+                                      formatTimeDisplay(slot)
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
               })}
             </div>
           )}

@@ -11,7 +11,7 @@ export function ModeToggle() {
     <div
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className={`
-        relative w-[4.6rem] h-10 flex items-center cursor-pointer rounded-full p-1 transition-colors duration-500 shadow-inner
+        relative w-[4.6rem] h-10 shrink-0 flex items-center cursor-pointer rounded-full p-1 transition-colors duration-500 shadow-inner
         ${isDark ? 'bg-secondary/60 border border-slate-700' : 'bg-secondary/10 border border-slate-300'}
       `}
     >

@@ -43,6 +43,14 @@ export const inspectionApi = baseApi.injectEndpoints({
                   providesTags: ["INSPECTION"],
                   transformResponse: (response) => response,
             }),
+
+            getBookedSlots: builder.query({
+                  query: () => ({
+                        url: "/inspection/booked-slots",
+                        method: "GET",
+                  }),
+                  providesTags: ["INSPECTION"],
+            }),
       }),
 });
 
@@ -52,4 +60,5 @@ export const {
       useRemoveInspectionMutation,
       useGetInspectionDetailsQuery,
       useGetAllInspectionsQuery,
+      useGetBookedSlotsQuery,
 } = inspectionApi;

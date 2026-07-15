@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import logoLight from "../../assets/images/logo/logo.png";
-import logoDark from "../../assets/images/logo/logo-dark.png";
+import logoDark from "../../assets/images/logo/logo.png";
 import { Link, NavLink } from "react-router";
 import { useUserInfoQuery } from "@/redux/features/auth/auth.api";
 import { ModeToggle } from "./ModeToggler";

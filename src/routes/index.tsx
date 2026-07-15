@@ -7,7 +7,6 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Verify from "@/pages/Verify";
 import Unauthorized from "@/pages/Unauthorized";
-import { TRole } from "@/types";
 import { withAuth } from "@/utils/withAuth";
 import { role } from "@/constants/role";
 import BlogDetails from "@/components/modules/Blogs/BlogDetails";
@@ -26,7 +25,7 @@ import UpdateAddress from "@/components/modules/Availability/UpdateAddress";
 
 export const router = createBrowserRouter([
   {
-    Component: withAuth(DashboardLayout, role.superAdmin as TRole),
+    Component: withAuth(DashboardLayout, [role.superAdmin, role.admin]),
     path: "/",
     children: [
       {
